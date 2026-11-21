@@ -2,19 +2,20 @@
 
 Локальный мост на базе **BeagleBone Black (Debian 11)** для передачи данных со станции TION MagicAir и беспроводного датчика CO₂+ в Home Assistant по протоколу MQTT (с поддержкой **MQTT Discovery**) без использования облака TION.
 
-Все компоненты настроены на работу **строго в оперативной памяти (RAM)** без записи на встроенную флеш-память (eMMC / SD).
+Все компоненты настроены на работу **строго в оперативной памяти (RAM)** без записи логов и баз на встроенную флеш-память (eMMC / SD).
 
 ## Состав проекта
 * `README.md` — данная инструкция.
-* `magicair_mqtt.py` — демон на Python для чтения `/dev/hidraw*` и отправки данных в MQTT.
-* `install.sh` — скрипт автоматической установки и настройки окружения.
+* `magicair_mqtt.py` — фоновый Python-мост для чтения `/dev/hidraw*` и отправки данных в MQTT.
+* `install.sh` — скрипт автоматической установки и настройки системы.
 
 ---
 
-## Быстрая установка
+## Быстрая установка на чистую плату
 
-1. Положите файлы `install.sh` и `magicair_mqtt.py` в одну папку (например, `/home/debian/`) и подключите станцию MagicAir **data-кабелем** в порт **USB Type-A** платы BeagleBone Black.
-2. Запустите установщик (он запросит имя пользователя и пароль для создаваемого MQTT-брокера):
+1. Положите файлы `install.sh` и `magicair_mqtt.py` в одну папку (например, `/home/debian/`).
+2. Подключите станцию MagicAir **data-кабелем** в полноразмерный разъем **USB Type-A** платы BeagleBone Black.
+3. Запустите установщик (он запросит имя пользователя и пароль для создаваемого MQTT-брокера):
    ```bash
    chmod +x install.sh magicair_mqtt.py
    ./install.sh
@@ -24,7 +25,7 @@
 
 ## Подключение в Home Assistant
 
-1. Узнайте IP-адрес платы командой `hostname -I` (закрепите его за MAC-адресом платы в DHCP вашего роутера).
+1. Узнайте локальный IP-адрес платы командой `hostname -I` (закрепите его за MAC-адресом платы в DHCP вашего роутера).
 2. В Home Assistant откройте **Настройки → Устройства и службы → Добавить интеграцию → MQTT**.
 3. Введите:
    * **Брокер:** IP-адрес BeagleBone Black *(не используйте `.local` для HA в Docker, так как внутри контейнера нет mDNS)*
@@ -38,8 +39,8 @@
 
 * **Статус сервиса:** `sudo systemctl status magicair-mqtt.service`
 * **Логи сервиса (в реальном времени):** `journalctl -u magicair-mqtt.service -f`
-* **Просмотр потока сообщений MQTT:**
+* **Просмотр потока сообщений MQTT с отметками времени:**
   ```bash
-  source /etc/magicair.env && mosquitto_sub -h 127.0.0.1 -u "\(MQTT_USER" -P "\)MQTT_PASS" -t 'tion/#' -v
+  sudo bash -c 'source /etc/magicair.env && mosquitto_sub -h 127.0.0.1 -u "\(MQTT_USER" -P "\)MQTT_PASS" -t "tion/#" -F "%I | %t | %p"'
   ```
 * **Смена пароля MQTT:** отредактируйте `/etc/magicair.env`, обновите пароль в Mosquitto (`sudo mosquitto_passwd -c /etc/mosquitto/passwd <user>`) и перезапустите службы (`sudo systemctl restart mosquitto magicair-mqtt`).
