@@ -46,10 +46,10 @@ sudo systemctl enable --now mosquitto
 sudo systemctl restart mosquitto
 
 echo "=== 4. Настройка udev-правила для TION MagicAir ==="
-echo 'SUBSYSTEM=="hidraw", ATTRS{idVendor}=="2d45", MODE="0666"' | sudo tee /etc/udev/rules.d/99-tion-magicair.rules >/dev/null
+echo 'KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="2d45", MODE="0666"' | sudo tee /etc/udev/rules.d/99-tion-magicair.rules >/dev/null
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
-echo "=== 5. Сохранение пароля в защищенный /etc/magicair.env и установка сервиса ==="
+echo "=== 5. Сохранение пароля в /etc/magicair.env и установка сервиса ==="
 sudo install -m 0755 "${SCRIPT_DIR}/magicair_mqtt.py" /usr/local/bin/magicair_mqtt.py
 
 sudo tee /etc/magicair.env >/dev/null <<EOF
@@ -72,6 +72,7 @@ Wants=mosquitto.service
 Type=simple
 User=debian
 EnvironmentFile=/etc/magicair.env
+ExecStartPre=/bin/sleep 10
 ExecStart=/usr/bin/python3 /usr/local/bin/magicair_mqtt.py
 Restart=always
 RestartSec=5
