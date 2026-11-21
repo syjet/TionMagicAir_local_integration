@@ -41,6 +41,6 @@
 * **Логи сервиса (в реальном времени):** `journalctl -u magicair-mqtt.service -f`
 * **Просмотр потока сообщений MQTT с отметками времени:**
   ```bash
-  sudo bash -c 'source /etc/magicair.env && mosquitto_sub -h 127.0.0.1 -u "\(MQTT_USER" -P "\)MQTT_PASS" -t "tion/#" -F "%I | %t | %p"'
+  mosquitto_sub -h 127.0.0.1 -u ЛОГИН -P 'ПАРОЛЬ' -t "tion/#" -F "%I | %t | %p"
   ```
 * **Смена пароля MQTT:** отредактируйте `/etc/magicair.env`, обновите пароль в Mosquitto (`sudo mosquitto_passwd -c /etc/mosquitto/passwd <user>`) и перезапустите службы (`sudo systemctl restart mosquitto magicair-mqtt`).
