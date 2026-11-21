@@ -27,7 +27,7 @@ def find_magicair():
         with open(uevent_path, "r", encoding="utf-8", errors="ignore") as f:
             content = f.read().lower()
         if "0003:00002d45:" in content:
-            hidraw_name = uevent_path.split("/")
+            hidraw_name = os.path.basename(os.path.dirname(os.path.dirname(uevent_path)))
             return f"/dev/{hidraw_name}"
     return None
 
@@ -107,6 +107,7 @@ def main():
     last_sent = {"bs310": 0.0, "co2plus": 0.0}
 
     try:
+        time.sleep(0.3)
         send_hid_command(fd, "logenable")
         while True:
             raw = os.read(fd, 64)
