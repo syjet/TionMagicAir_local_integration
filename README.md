@@ -17,6 +17,11 @@
 - `tion/tion_co2plus_<mac>/state` — показания каждого датчика CO2+ без двоеточий в MAC (`temp`, `hum`, `co2`).
 - `tion/bbb_magicair_host/state` — диагностика платы (`ram_avail`, `ram_used_pct`, `load_1m`, `uptime_h`).
 
+## Структура репозитория
+- `magicair_mqtt.py` — основной сервис-парсер и публикатор MQTT.
+- `install.sh` — скрипт развертывания (зависимости, udev, journald, systemd).
+- `magicair.env.example` — шаблон файла конфигурации с реквизитами MQTT.
+
 ## Установка
 
 1. Клонируйте репозиторий на BeagleBone Black:
@@ -36,3 +41,9 @@
    sudo nano /etc/magicair.env
    sudo systemctl restart magicair-mqtt.service
    ```
+
+## Проверка работы
+```bash
+systemctl status magicair-mqtt.service
+journalctl -u magicair-mqtt.service -f
+```
