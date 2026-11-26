@@ -26,8 +26,8 @@
 
 1. Клонируйте репозиторий на BeagleBone Black:
    ```bash
-   git clone <URL_вашего_репозитория>
-   cd <папка_репозитория>
+   git clone https://github.com/syjet/TionMagicAir_local_integration.git
+   cd TionMagicAir_local_integration
    ```
 
 2. Запустите установочный скрипт:
