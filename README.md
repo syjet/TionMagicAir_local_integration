@@ -1,46 +1,38 @@
-# Интеграция TION MagicAir (BS310 / BS410) и CO₂+ в Home Assistant по USB
+# TION MagicAir USB to MQTT Bridge (BeagleBone Black)
 
-Локальный мост на базе **BeagleBone Black (Debian 11)** для передачи данных со станции TION MagicAir и беспроводного датчика CO₂+ в Home Assistant по протоколу MQTT (с поддержкой **MQTT Discovery**) без использования облака TION.
+Локальный мост для считывания данных со станции **TION MagicAir BS310** и любого количества беспроводных датчиков **TION CO2+** по USB (HID) и публикации их в **Home Assistant** через MQTT Auto Discovery.
 
-Все компоненты настроены на работу **строго в оперативной памяти (RAM)** без записи логов и баз на встроенную флеш-память (eMMC / SD).
+Дополнительно скрипт отправляет диагностическую телеметрию самой платы **BeagleBone Black** (свободная/занятая RAM, Load Average, аптайм).
 
-## Состав проекта
-* `README.md` — данная инструкция.
-* `magicair_mqtt.py` — фоновый Python-мост для чтения `/dev/hidraw*` и отправки данных в MQTT.
-* `install.sh` — скрипт автоматической установки и настройки системы.
+## Возможности
+- Автоматический поиск станции TION MagicAir по USB VID `2d45` (`/dev/hidraw*`).
+- **Мульти-поддержка датчиков CO2+:** автоматическое обнаружение и регистрация в Home Assistant каждого привязанного датчика по его уникальному MAC-адресу (`tion_co2plus_<mac>`).
+- Передача показаний CO₂, температуры и влажности базовой станции `BS310` и датчиков `CO2+` каждые 10 секунд (`expire_after: 60`).
+- Диагностика хоста BeagleBone Black в Home Assistant каждые 60 секунд (`expire_after: 180`).
+- Хранение учетных данных MQTT вне кода (`/etc/magicair.env`).
+- Защита флеш-памяти (eMMC / microSD) от износа: логи `journald` переведены в оперативную память (`Storage=volatile`, лимит `20M`).
 
----
+## Структура топиков MQTT
+- `tion/tion_magicair_bs310/state` — показания базовой станции (`temp`, `hum`, `co2`).
+- `tion/tion_co2plus_<mac>/state` — показания каждого датчика CO2+ без двоеточий в MAC (`temp`, `hum`, `co2`).
+- `tion/bbb_magicair_host/state` — диагностика платы (`ram_avail`, `ram_used_pct`, `load_1m`, `uptime_h`).
 
-## Быстрая установка на чистую плату
+## Установка
 
-1. Положите файлы `install.sh` и `magicair_mqtt.py` в одну папку (например, `/home/debian/`).
-2. Подключите станцию MagicAir **data-кабелем** в полноразмерный разъем **USB Type-A** платы BeagleBone Black.
-3. Запустите установщик (он запросит имя пользователя и пароль для создаваемого MQTT-брокера):
+1. Клонируйте репозиторий на BeagleBone Black:
    ```bash
-   chmod +x install.sh magicair_mqtt.py
+   git clone <URL_вашего_репозитория>
+   cd <папка_репозитория>
+   ```
+
+2. Запустите установочный скрипт:
+   ```bash
+   chmod +x install.sh
    ./install.sh
    ```
 
----
-
-## Подключение в Home Assistant
-
-1. Закрепите IP за MAC-адресом платы в DHCP сервере вашего роутера.
-2. В Home Assistant откройте **Настройки → Устройства и службы → Добавить интеграцию → MQTT**.
-3. Введите:
-   * **Брокер:** IP-адрес BeagleBone Black *(не используйте доменное имя `.local` если HA в Docker, так как внутри контейнера нет mDNS)*
-   * **Порт:** `1883`
-   * **Имя пользователя и пароль:** те, что вы указали при запуске `install.sh`
-4. После подключения в разделе MQTT автоматически появятся **2 устройства** (`TION MagicAir BS310` и `TION Датчик CO2+`) с 6 датчиками.
-
----
-
-## Полезные команды обслуживания
-
-* **Статус сервиса:** `sudo systemctl status magicair-mqtt.service`
-* **Логи сервиса (в реальном времени):** `journalctl -u magicair-mqtt.service -f`
-* **Просмотр потока сообщений MQTT с отметками времени:**
-  ```bash
-  mosquitto_sub -h 127.0.0.1 -u ЛОГИН -P 'ПАРОЛЬ' -t "tion/#" -F "%I | %t | %p"
-  ```
-* **Смена пароля MQTT:** отредактируйте `/etc/magicair.env`, обновите пароль в Mosquitto (`sudo mosquitto_passwd -c /etc/mosquitto/passwd <user>`) и перезапустите службы (`sudo systemctl restart mosquitto magicair-mqtt`).
+3. Укажите актуальный логин и пароль от MQTT-брокера в `/etc/magicair.env` и перезапустите службу:
+   ```bash
+   sudo nano /etc/magicair.env
+   sudo systemctl restart magicair-mqtt.service
+   ```
